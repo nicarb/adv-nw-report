@@ -8,14 +8,44 @@
 \begin{document}
 \input{title.tex}
 
+\begin{abstract}
+In this report it is explained a module extension for \textbf{GRAPES} library.
+It consists of a practical implementation of a module that manages the
+transmittion over TCP. In the previous version of GRAPES the transmission was
+executed over UDP. On the one hand, the advantages of TCP over UDP are quite
+clear, as TCP guarantees that the sent data actually arrives, that it arrives
+in order and that there are no duplicates, while UDP provides none of these
+guarantees (only offers best effort policy). Unlike TCP, UDP does not provide
+any flow and congestion control. On the other hand, UDP is more suitable in
+applications and enviroments such peer-to-peer streaming, where thorughput
+performance is the main request. It is faster because there is no
+error-checking for packets, it does not order packets and there is no
+tracking connections. It is a small transport layer designed on top of IP.
+If any ordering is required, it has to be managed by the application layer.\\
+Considering these aspects, there have been choose to develop a module that
+consideres advantages from both protocols and takles some drawbacks derived
+from them.
+
+\end{abstract}
+
 \tableofcontents
-\listoffigures
+%\listoffigures
 %\listoftables
 
 \chapter{Introduction}
 \label{ch:intro}
+Before getting lost in many technicalities, there have been reported a small
+introduction to the GRAPES library. It is a generic environment for P2P
+streaming. It is designed to be usable in different environments and
+situations. Peer-to-peer (\textbf{P2P}) tecnologies are becoming increasingly
+popular as a way to overcome the scalability problem limitations intrinsic in
+traditional applications based on client/server paradigm. In particular there
+is a great interest in P2P streaming applications because they have high
+demands in term of bandwidth requirements and IP-level multicasting is not
+supported on the internet.
+More details could be found in \cite{disi10-038}.
 
-In this report we are going to talk about yada yada yada....
+In this report ....
 In particular, we will focus on:
 \begin{itemize}
   \item yada
@@ -76,6 +106,14 @@ In this chapter we are going to annalyse the performances...
 \end{appendices}
 
 \bibliographystyle{plain}
-\bibliography{d1}
+\begin{thebibliography}{99}
+
+\bibitem{disi10-038} \textit{Luca Abeni, Csaba Kiraly, Alessandro Russo,
+Marco Biazzini and Renato Lo Cigno},
+June 2010, \textbf{GRAPES: a Generic Environment for P2P Streaming.}
+{\em Technical report \#DISI-10-38}
+
+\end{thebibliography}
+%\bibliography{rep-bib}
 
 \end{document}
