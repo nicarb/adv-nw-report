@@ -1,113 +1,51 @@
-\documentclass[12pt,a4paper]{report}
+\documentclass[12pt,a4paper]{article}
 
 \usepackage{graphicx, subfigure}
 \usepackage{appendix}
+
+\usepackage{listings}
+\lstset{ %
+language=C,                % choose the language of the code
+basicstyle=\footnotesize,       % the size of the fonts that are used for the code
+numbers=left,                   % where to put the line-numbers
+numberstyle=\footnotesize,      % the size of the fonts that are used for the line-numbers
+stepnumber=1,                   % the step between two line-numbers. If it is 1 each line will be numbered
+numbersep=5pt,                  % how far the line-numbers are from the code
+%backgroundcolor=\color{white},  % choose the background color. You must add \usepackage{color}
+showspaces=false,               % show spaces adding particular underscores
+showstringspaces=false,         % underline spaces within strings
+showtabs=false,                 % show tabs within strings adding particular underscores
+frame=single,           % adds a frame around the code
+tabsize=2,          % sets default tabsize to 2 spaces
+captionpos=b,           % sets the caption-position to bottom
+breaklines=true,        % sets automatic line breaking
+breakatwhitespace=false,    % sets if automatic breaks should only happen at whitespace
+escapeinside={\%*}{*)}          % if you want to add a comment within your code
+}
+
 
 \newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
 
 \begin{document}
 \input{title.tex}
 
-\begin{abstract}
-In this report it is explained a module-extension for \textbf{GRAPES} library.
-It consists of a practical implementation of a module that manages the
-transmittion over TCP. In the previous version of \textbf{GRAPES} the
-transmission was
-executed over UDP. On the one hand, the advantages of TCP over UDP are quite
-clear, as TCP guarantees that the sent data actually arrives, that it arrives
-in order and that there are no duplicates, while UDP provides none of these
-guarantees (only offers best effort policy). Unlike TCP, UDP does not provide
-any flow and congestion control. On the other hand, UDP is more suitable in
-applications and enviroments such peer-to-peer streaming, where thorughput
-performance is the main request. It is faster because there is no
-error-checking for packets, it does not order packets and there is no
-tracking connections. It is a small transport layer designed on top of IP.
-If any ordering is required, it has to be managed by the application layer.\\
-Considering these aspects, there have been choose to develop a module that
-consideres advantages from both protocols and takles some drawbacks derived
-from them.
-
-\end{abstract}
+\include{abstract.tex}
 
 %\tableofcontents
 %\listoffigures
 %\listoftables
 
-\chapter{Introduction}
-\label{ch:intro}
-Before getting lost in many technicalities, there have been reported a small
-introduction to the GRAPES library. It is a generic environment for P2P
-streaming. It is designed to be usable in different environments and
-situations. Peer-to-peer (\textbf{P2P}) tecnologies are becoming increasingly
-popular as a way to overcome the scalability problem limitations intrinsic in
-traditional applications based on client/server paradigm. In particular there
-is a great interest in P2P streaming applications because they have high
-demands in term of bandwidth requirements and IP-level multicasting is not
-supported on the internet.
-More details could be found in \cite{disi10-038}.
+\include{sec-intro}
 
-The \textbf{GRAPES} library provides a net-helper for managing the
-communication. At the beggining, it was using the UDP protocol on POSIX
-systems. There were implemented just some functionalities which aim was to
-provide communication without worring to much about reliability and
-correctness: if the application needed such requisites, it had to warry of
-them at application level. (\textit{should we say this or is it offensive for the guys?! =P})
+%\include{sec-grapes}
 
-In this report ....
-In particular, we will focus on:
-\begin{itemize}
-  \item yada
-  \item yada
-  \item yada
-\end{itemize}
-More details about \textbf{yada} can be found in \cite{yada1}, \cite{yada2},
-\cite{yada3} and \cite{yada4}.
-The first approach for studying the structure of these entities is by using
-yada...
-That is:
-\begin{itemize}
-\item a
-\item b
-\item c
-\end{itemize}
+\include{sec-nh-tcp}
 
-%=========================================================================================================================
+\include{sec-tests}
 
-\chapter{GRAPES}
-\label{ch:grapes}
-At this point lets have a look to the content of \textbf{GRAPES} library and the module we developed.
+\include{sec-perf}
 
-\section{asd}
-\label{asd}
-
-%=========================================================================================================================
-
-\chapter{Tests}
-\label{ch:tests}
-In this chapter we are going to describe the tests ....
-
-%=========================================================================================================================
-
-\chapter{Performances Analysis}
-In this chapter we are going to annalyse the performances...
-
-\begin{center}
-    \begin{tabular}{ | p{4.8cm} | p{4.8cm} | p{4.8cm} |}
-    \hline
-       \textbf{column 1}
-         & \textbf{column 2}
-         & \textbf{column 3}\\ \hline \hline
-       .....
-         & ------
-         & .... \\ \hline
-     \end{tabular}
-\end{center}
-
-%=========================================================================================================================
-\chapter{Conclusion}
-
-
-%=========================================================================================================================
+\include{sec-conclusion}
 
 \begin{appendices}
 

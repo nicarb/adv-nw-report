@@ -47,4 +47,7 @@ $(latexfile).tar.gz : $(figures) $(latexfile).tex $(referencefile).bib
 tarball: $(latexfile).tar.gz
 
 clean:
-	rm $(latexfile).dvi $(latexfile).aux $(latexfile).log $(latexfile).ps *~
+	rm *.aux
+	rm $(latexfile).dvi $(latexfile).log
+	rm $(latexfile).ps $(latexfile).pdf
+	rm *~
