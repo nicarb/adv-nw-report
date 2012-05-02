@@ -1,0 +1,20 @@
+\begin{abstract}
+In this report it is explained a module-extension for \textbf{GRAPES} library.
+It consists of a practical implementation of a module that manages the
+transmittion over TCP. In the previous version of \textbf{GRAPES} the
+transmission was
+executed over UDP. On the one hand, the advantages of TCP over UDP are quite
+clear, as TCP guarantees that the sent data actually arrives, that it arrives
+in order and that there are no duplicates, while UDP provides none of these
+guarantees (only offers best effort policy). Unlike TCP, UDP does not provide
+any flow and congestion control. On the other hand, UDP is more suitable in
+applications and enviroments such peer-to-peer streaming, where thorughput
+performance is the main request. It is faster because there is no
+error-checking for packets, it does not order packets and there is no
+tracking connections. It is a small transport layer designed on top of IP.
+If any ordering is required, it has to be managed by the application layer.\\
+Considering these aspects, there have been choose to develop a module that
+consideres advantages from both protocols and takles some drawbacks derived
+from them.
+
+\end{abstract}

@@ -1,0 +1,37 @@
+\section{Introduction}
+\label{ch:intro}
+Before getting lost in many technicalities, there have been reported a small
+introduction to the GRAPES library. It is a generic environment for P2P
+streaming. It is designed to be usable in different environments and
+situations. Peer-to-peer (\textbf{P2P}) tecnologies are becoming increasingly
+popular as a way to overcome the scalability problem limitations intrinsic in
+traditional applications based on client/server paradigm. In particular there
+is a great interest in P2P streaming applications because they have high
+demands in term of bandwidth requirements and IP-level multicasting is not
+supported on the internet.
+More details could be found in \cite{disi10-038}.
+
+The \textbf{GRAPES} library provides a net-helper for managing the
+communication. At the beggining, it was using the UDP protocol on POSIX
+systems. There were implemented just some functionalities which aim was to
+provide communication without worring to much about reliability and
+correctness: if the application needed such requisites, it had to warry of
+them at application level. %(\textit{should we say this or is it offensive for the guys?! =P})
+
+In this report we will explain the internals of the tcp-communication module.
+In particular, we will focus on three main functions that are involved:
+\begin{itemize}
+  \item \textit{send_to_peer}:
+  \item \textit{recv_from_peer}:
+  \item \textit{wait4data}:
+\end{itemize}
+More details about \textbf{yada} can be found in \cite{yada1}, \cite{yada2},
+\cite{yada3} and \cite{yada4}.
+The first approach for studying the structure of these entities is by using
+yada...
+That is:
+\begin{itemize}
+\item a
+\item b
+\item c
+\end{itemize}

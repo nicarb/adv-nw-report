@@ -1,0 +1,28 @@
+\section{Net Helper - TCP}
+In this chapter are explained the internals of the module. 
+
+\subsection{Data Structures}
+
+\begin{lstlisting}
+typedef struct nodeID {
+    unsigned refcount;
+    sockaddr_t addr;
+    local_t *loc;
+} nodeid_t;
+\end{lstlisting}
+
+
+\begin{lstlisting}
+typedef struct {
+    dict_t neighbors;
+    int srvfd;
+    aqueue_t aqueue;
+} local_t;
+\end{lstlisting}
+
+
+\subsection{Send to Peer}
+
+\subsection{Receive from Peer}
+
+\subsection{Wait for Data}
