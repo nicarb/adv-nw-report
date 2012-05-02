@@ -12,11 +12,29 @@ supported on the internet.
 More details could be found in \cite{disi10-038}.
 
 The \textbf{GRAPES} library provides a net-helper for managing the
-communication. At the beggining, it was using the UDP protocol on POSIX
-systems. There were implemented just some functionalities which aim was to
-provide communication without worring to much about reliability and
-correctness: if the application needed such requisites, it had to warry of
-them at application level. %(\textit{should we say this or is it offensive for the guys?! =P})
+communication. At the beggining, it was using the \textit{UDP} protocol on POSIX
+systems. As it is known, \textit{UDP} is commonly used in internet for streaming audio and video,
+whereas it is avoided in contexts where the content of the transmitted data is relevant.
+The reason for implementing a \textit{TCP}-communication module that works in a context where
+commonly \textit{UDP} is used, is given by the need of 'guaranteeing delivery'.
+Some features for this are intrinsecally given by \textit{TCP}:
+\begin{itemize}
+\item \textbf{flow control}: it determines when data needs to be re-sent and stops flow of data until
+  previous packes are successfully transeferred.
+\item \textbf{re-transimittion}: if the data is lost or collision have occur during transmition.
+\end{itemize}
+Some other functionalities have been created in order to takle disadvantages that \textit{TCP} has
+respect to \textit{UDP}:
+\begin{itemize}
+\item \textbf{dictionary}: a manager for the set of connections in order to keep them `alive'.
+                          Commonly \textit{TCP} is used in 'single-shot' mode: the transition is
+                          used for delivering a packet and the connection is closed once it has
+                          been completely transferred. This is an waste of resources in an
+                          environment where is exchanged a high rate of packets.
+\item \textbf{states machines}: for both sender and receiver peers have been builded a state machine
+                                that permites to them to be in consistent state.
+\item \textbf{timeout}: connections are closed when a predefined timeout expires.
+\end{itemize}
 
 In this report we will explain the internals of the tcp-communication module.
 In particular, we will focus on three main functions that are involved:
@@ -25,13 +43,4 @@ In particular, we will focus on three main functions that are involved:
   \item \textit{recv_from_peer}:
   \item \textit{wait4data}:
 \end{itemize}
-More details about \textbf{yada} can be found in \cite{yada1}, \cite{yada2},
-\cite{yada3} and \cite{yada4}.
-The first approach for studying the structure of these entities is by using
-yada...
-That is:
-\begin{itemize}
-\item a
-\item b
-\item c
-\end{itemize}
+
