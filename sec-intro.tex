@@ -36,11 +36,56 @@ respect to \textit{UDP}:
 \item \textbf{timeout}: connections are closed when a predefined timeout expires.
 \end{itemize}
 
-In this report we will explain the internals of the tcp-communication module.
-In particular, we will focus on three main functions that are involved:
+In this report will be explained the internals of the net-helper-tcp module.
+In particular, the focus will be on three main functions that are involved:
 \begin{itemize}
-  \item \textit{send_to_peer}:
-  \item \textit{recv_from_peer}:
-  \item \textit{wait4data}:
+  \item \textit{send\_to\_peer}:executes the sending of a messages. More details about
+    this could be found in next section.
+  \item \textit{recv\_from\_peer}: executes the receiving of a message. More details about
+    this could be found in next section.
+  \item \textit{wait4data}:  continuosly scans connected peers for receiving data.
+    More details about this could be found in next section.
 \end{itemize}
 
+
+\subsection{Connection estabilishment}
+
+\subsubsection{net-helper init}
+At first, a \textit{node} is created containg the own \textit{ip address} and \textit{port}. Than is located a
+\textit{local\_t} data structure.
+\begin{lstlisting}
+typedef struct {
+    dict_t neighbors;
+    int srvfd;
+    aqueue_t aqueue;
+} local_t;
+\end{lstlisting}
+This data set contains a dictionary (a set of nodes) of its neighbours. 
+
+\begin{lstlisting}
+typedef struct nodeID {
+    unsigned refcount;
+    sockaddr_t addr;
+    local_t *loc;
+} nodeid_t;
+\end{lstlisting}
+
+\subsection{Dictionary}
+
+
+\subsubsection{Dictionary interface}
+
+\subsection{Aqueue}
+
+\subsubsection{Aqueue iterface}
+
+\subsection{Timeout}
+
+\subsubsection{Timeout interface}
+
+
+
+%////////////////////////////////////
+\begin{lstlisting}
+
+\end{lstlisting}
