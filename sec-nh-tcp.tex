@@ -1,34 +1,61 @@
 \section{Net Helper - TCP}
-The internals of the \textit{net-helper-TCP}'s module are explained In this chapter. 
-
-
-
-\subsection{Data Structures}
-
-\begin{lstlisting}
-typedef struct nodeID {
-    unsigned refcount;
-    sockaddr_t addr;
-    local_t *loc;
-} nodeid_t;
-\end{lstlisting}
-
-
-\begin{lstlisting}
-typedef struct {
-    dict_t neighbors;
-    int srvfd;
-    aqueue_t aqueue;
-} local_t;
-\end{lstlisting}
-
+A first layout of the \textit{net-helper-TCP}'s module, that consist on initialization, main data structures
+and management functions, were explained in the previous section. whereas its internals, that consist on
+logical management of the data transfer, are explained in the follow one.
 
 \subsection{Send to Peer}
 
-\subsubsection{Sender Interface}
+\begin{lstlisting}
+typedef enum {
+    SENDER_IDLE,
+    SENDER_BUSY
+} sender_state_t;
+\end{lstlisting}
+
+\subsubsection{Sender - Interface}
+
+\begin{lstlisting}
+sender_t sender_new ();
+
+sender_state_t sender_state (sender_t s);
+
+void sender_reset (sender_t s);
+
+int sender_subscribe (sender_t s, const msgbuf_t *msg);
+
+int sender_run (sender_t s, int fd);
+
+void sender_del (sender_t s);
+\end{lstlisting}
 
 \subsection{Receive from Peer}
+\begin{lstlisting}
+typedef enum {
+    RECVER_MSG_READY,
+    RECVER_EMPTY,
+    RECVER_BUSY
+} recver_state_t;
+\end{lstlisting}
 
-\subsubsection{Receiver Interface}
+\subsubsection{Receiver - Interface}
+\begin{lstlisting}
+typedef struct recver * recver_t;
+
+recver_t recver_new ();
+
+recver_state_t recver_state (recver_t r);
+
+void recver_reset (recver_t r);
+
+const msgbuf_t * recver_read (recver_t r);
+
+int recver_run (recver_t r, int fd);
+
+void recver_del (recver_t r);
+\end{lstlisting}
 
 \subsection{Wait for Data}
+
+\subsubsection{Wait for data - interface}
+\begin{lstlisting}
+\end{lstlisting}
