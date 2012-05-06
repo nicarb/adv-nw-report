@@ -39,34 +39,19 @@ respect to \textit{UDP}:
 In this report will be explained the internals of the net-helper-tcp module.
 In particular, the focus will be on three main functions that are involved:
 \begin{itemize}
-<<<<<<< HEAD
-  \item \textit{send\_to\_peer}:executes the sending of a messages. More details about
+  \item \textit{send\_to\_peer}: executes the sending of a messages. More details about
     this could be found in next section.
   \item \textit{recv\_from\_peer}: executes the receiving of a message. More details about
     this could be found in next section.
   \item \textit{wait4data}:  continuosly scans connected peers for receiving data.
     More details about this could be found in next section.
-=======
-  \item \textit{send\_to\_peer}:
-  \item \textit{recv\_from\_peer}:
-  \item \textit{wait4data}:
->>>>>>> origin/new-yada
 \end{itemize}
 
 
 \subsection{Connection estabilishment}
 
 \subsubsection{net-helper init}
-At first, a \textit{node} is created containg the own \textit{ip address} and \textit{port}. Than is located a
-\textit{local\_t} data structure.
-\begin{lstlisting}
-typedef struct {
-    dict_t neighbors;
-    int srvfd;
-    aqueue_t aqueue;
-} local_t;
-\end{lstlisting}
-This data set contains a dictionary (a set of nodes) of its neighbours. 
+At first, a \textit{node} is created containg the own \textit{ip address} and \textit{port}. 
 
 \begin{lstlisting}
 typedef struct nodeID {
@@ -75,23 +60,120 @@ typedef struct nodeID {
     local_t *loc;
 } nodeid_t;
 \end{lstlisting}
+This data set contains:
+\begin{itemize}
+\item \textbf{reference counter} a label that accounts the duplication of the node.
+\item \textbf{socket address} a data structure containing the socked address
+  (for more details: \ref{apx-nh-init}). 
+\item \textbf{local\_t} local data struct that will be explained below.
+\end{itemize}
+Than there is allocated a \textit{local\_t} data structure, as mentioned before. The \textit{nodeid\_t}
+contains a local data structure that is:
+\begin{lstlisting}
+typedef struct {
+    dict_t neighbors;
+    int srvfd;
+    aqueue_t aqueue;
+} local_t;
+\end{lstlisting}
+This data set consists on:
+\begin{itemize}
+\item \textbf{a dictionary} (a set of nodes) of its neighbours. More details about this will be explained in next
+                            section.
+\item \textbf{a file descriptor} that correspond to its own file descriptor.
+\item \textbf{a queue} that is a data structure corresponding to a queue of active peers. More details about this
+                       will be explained in section %%%
+\end{itemize}
+After initializing the needed data structures (e.g.local\_t, dict\_t, timeout, ...),
+the initializer returns the created data-structure \textit{nodeID}.
 
 \subsection{Dictionary}
-
+This could be considered the key point for management of the connections. It is managed through a hash-table
+which relies in an external library, \textbf{libdacav}.\\
+The related data structure is declare as:
+\begin{lstlisting}
+struct dict {
+    dhash_t *hash;
+    size_t nelems;
+};
+\end{lstlisting}
 
 \subsubsection{Dictionary interface}
+Here are reported the headers of the functions needed for the dictionary's management.
+\begin{lstlisting}
+/* Return 1 to continue, 0 to stop scanning */
+typedef int (* dict_foreach_t) (void *ctx, const sockaddr_t * addr,
+client_t cl);
 
-\subsection{Aqueue}
+/* Destructor must support NULL as input value */
+dict_t dict_new (struct tag *);
 
-\subsubsection{Aqueue iterface}
+/* Returns the inner pointer to client instance */
+client_t dict_search (dict_t d, const sockaddr_t *);
+
+void dict_foreach (dict_t d, dict_foreach_t cb, void * ctx);
+
+void dict_del (dict_t d);
+\end{lstlisting}
+
+\subsection{A-queue}
+
+\begin{lstlisting}
+struct aqueue {
+    dlist_t * queue;
+    fd_set read;
+    fd_set write;
+    int maxfd;
+    int n_active;
+};
+\end{lstlisting}
+
+\subsubsection{A-queue iterface}
+Here has been reported the interface of the functions related to the queue management:
+\begin{lstlisting}
+aqueue_t aqueue_new ();
+
+
+/**                                                                                                        
+ * @retval 0 on normal execution;                                                                          
+ * @retval 1 if user_fds are involved in selects;                                                          
+ * @retval -1 on error.                                                                                    
+ */
+int aqueue_scan_dict (aqueue_t q, dict_t dict, int srv_fd, int *user_fds,
+                      struct timeval *maxwait);
+
+int aqueue_empty (aqueue_t q);
+
+void aqueue_del (aqueue_t q);
+
+client_t aqueue_next (aqueue_t q);
+\end{lstlisting}
 
 \subsection{Timeout}
 
-\subsubsection{Timeout interface}
-
-
-
-%////////////////////////////////////
 \begin{lstlisting}
+struct tout {
+    struct timeval last_update;
+    struct timeval period;
+};
+\end{lstlisting}
 
+\subsubsection{Timeout interface}
+Here is reported the interface of the timeout management:
+\begin{lstlisting}
+tout_t tout_new (const struct timeval *timeout);
+
+tout_t tout_copy (const tout_t t);
+
+void tout_reset (tout_t t);
+
+int tout_expired (tout_t t);
+
+void tout_del (tout_t t);
+
+struct timeval * tout_remaining (tout_t t, struct timeval *diff);
+
+unsigned tout_timeval_to_ms (const struct timeval *tval);
+
+unsigned tout_now_ms ();
 \end{lstlisting}

@@ -1,7 +1,32 @@
 \section{Net-helper TCP}
 
+\begin{lstlisting}
+typedef struct {
+    uint32_t size;
+} header_t;
+
+typedef struct {
+    const void * data;
+    size_t size;
+} msgbuf_t;
+\end{lstlisting}
+
+\subsection{initializer}
+
+\subsubsection{Socket Address}
+\label{apx-nh-init}
+\begin{lstlisting}
+typedef union {
+    struct sockaddr sa;
+    struct sockaddr_storage ss;
+    struct sockaddr_in sin;
+    struct sockaddr_in6 sin6;
+} sockaddr_t;
+\end{lstlisting}
+
 \subsection{Send to peer}
 \label{nh-send2peer}
+
 \begin{lstlisting}
 int send_to_peer(const struct nodeID *self, struct nodeID *to,
                  const uint8_t *buffer_ptr, int buffer_size)
@@ -46,6 +71,7 @@ int send_to_peer(const struct nodeID *self, struct nodeID *to,
 
 \subsection{Receive from peer}
 \label{nh-rcv-peer}
+
 \begin{lstlisting}
 int recv_from_peer(const struct nodeID *self, struct nodeID **remote,
                    uint8_t *buffer_ptr, int buffer_size)
@@ -117,165 +143,29 @@ int wait4data(const struct nodeID *self, struct timeval *tout,
 
 \subsection{Other functions}
 \label{nh-oth-func}
+
+\section{Dictionary}
 \begin{lstlisting}
-int tcp_serve (int backlog, sockaddr_t *addr)
-{
-    int fd;
+struct dict {
+    dhash_t *hash;
+    size_t nelems;
+};
 
-    fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (fd == -1) {
-      print_err(``tcp_serve'', ``socket'', errno);
-        return -1;
-    }
+/* Return 1 to continue, 0 to stop scanning */
+typedef int (* dict_foreach_t) (void *ctx, const sockaddr_t * addr,
+client_t cl);
 
-    if (bind(fd, &addr->sa, sizeof(struct sockaddr_in))) {
-        print_err(``tcp_serve'', ``bind'', errno);
-        close(fd);
-        return -1;
-    }
+/* Destructor must support NULL as input value */
+dict_t dict_new (struct tag *);
 
-    if (listen(fd, backlog) == -1) {
-        print_err(``tcp_serve'', ``listen'', errno);
-        close(fd);
-        return -1;
-    }
+/* Returns the inner pointer to client instance */
+client_t dict_search (dict_t d, const sockaddr_t *);
 
-    return fd;
-}
+void dict_foreach (dict_t d, dict_foreach_t cb, void * ctx);
+
+void dict_del (dict_t d);
+
 \end{lstlisting}
 
-\begin{lstlisting}
-struct nodeID *nodeid_dup (struct nodeID *s)
-{
-    s->refcount ++;
-    return s;
-}
-\end{lstlisting}
 
-\begin{lstlisting}
-int nodeid_equal (const nodeid_t *s1, const nodeid_t *s2)
-{
-    if (s1 == s2) return 1;
-    return sockaddr_equal(&s1->addr, &s2->addr);
-}
-\end{lstlisting}
-
-\begin{lstlisting}
-struct nodeID *create_node (const char *ipaddr, int port)
-{
-    nodeid_t *ret = mem_new(sizeof(struct nodeID));
-
-    /* Initialization of address */
-    memset(&ret->addr, 0, sizeof(sockaddr_t));
-    ret->addr.sa.sa_family = AF_INET;
-    sockaddr_set_port(&ret->addr, port);
-
-    if (ipaddr != NULL) {
-        if (sockaddr_in_init(&ret->addr, ipaddr, port) == -1) {
-            return NULL;
-        }
-    }
-
-    ret->loc = NULL;
-    ret->refcount = 1;
-
-    return ret;
-}
-\end{lstlisting}
-
-\begin{lstlisting}
-void nodeid_free (struct nodeID *s)
-{
-    if (s == NULL) return;
-
-    s->refcount --;
-    if (s->refcount == 0) {
-        local_t *local = s->loc;
-
-        if (local != NULL) {
-            dict_del(local->neighbors);
-            if (local->srvfd != -1) close(local->srvfd);
-            aqueue_del(local->aqueue);
-            free(local);
-        }
-        free(s);
-    }
-}
-\end{lstlisting}
-
-\begin{lstlisting}
-struct nodeID * net_helper_init (const char *ipaddr, int port,
-                                 const char *config)
-{
-    nodeid_t *self;
-    struct tag *cfg_tags;
-    int backlog;
-    local_t *local;
-
-    self = create_node(ipaddr, port);
-    if (self == NULL) {
-        return NULL;
-    }
-
-    self->loc = local = mem_new(sizeof(local_t));
-
-    /* Default settings */
-    backlog = DEFAULT_BACKLOG;
-
-    /* Reading settings */
-    cfg_tags = NULL;
-    if (config) {
-      cfg_tags = config_parse(config);
-    }
-    if (cfg_tags) {
-        /* FIXME: this seems not to work! Testing needed */
-        config_value_int_default(cfg_tags, CONF_KEY_BACKLOG, &backlog,
-                                 DEFAULT_BACKLOG);
-    }
-    local->neighbors = dict_new(cfg_tags);
-    free(cfg_tags);
-
-    local->aqueue = aqueue_new();
-    local->srvfd = tcp_serve(backlog, &self->addr);
-    if (local->srvfd == -1) {
-      nodeid_free(self);
-        return NULL;
-    }
-
-    return self;
-}
-\end{lstlisting}
-
-\begin{lstlisting}
-struct nodeID *nodeid_undump (const uint8_t *b, int *len)
-{
-    nodeid_t *node;
-
-    node = create_node(NULL, 0);
-    *len = sockaddr_undump(&node->addr, sizeof(sockaddr_t),
-                           (const void *)b);
-    return node;
-}
-\end{lstlisting}
-
-\begin{lstlisting}
-int nodeid_dump (uint8_t *b, const struct nodeID *s,
-                 size_t max_write_size)
-{
-    return sockaddr_dump((void *)b, max_write_size, &s->addr);
-}
-\end{lstlisting}
-
-\begin{lstlisting}
-int node_ip(const struct nodeID *s, char *ip, int len)
-{
-    return sockaddr_strrep(&s->addr, ip, len) == NULL ? 0 : -1;
-}
-\end{lstlisting}
-
-\begin{lstlisting}
-int node_ip(const struct nodeID *s, char *ip, int len)
-{
-    return sockaddr_strrep(&s->addr, ip, len) == NULL ? 0 : -1;
-}
-\end{lstlisting}
+\section{Libdacav}
