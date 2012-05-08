@@ -4,16 +4,66 @@ and management functions, were explained in the previous section. whereas its in
 logical management of the data transfer, are explained in the follow one.
 
 \subsection{Send to Peer}
+The sending conceptually has been split in two parts:
+\begin{itemize}
+  \item \textbf{a state machine} 
+  \item \textbf{a procedure} that manages the act of sending
+\end{itemize}
 
+
+\subsubsection{Sender state machine}
+The state machine itself has been divided in two parts: at \textit{sender} level and at \textit{message} level.
 \begin{lstlisting}
 typedef enum {
     SENDER_IDLE,
     SENDER_BUSY
 } sender_state_t;
+
+typedef enum {
+    SND_HEADER,
+    SND_MESSAGE,
+    SND_IDLE,
+} state_t;
+\end{lstlisting}
+This is done because the sending is considered to be acomplished in two steps:
+\begin{itemize}
+  \item at first the sender deliveres a message containing a headder in order to inform the receiver. This is
+        foundamental for the recepient in order to allocate the needed resources and give a feedback for the
+        related send request.
+  \item than the body of the related message is sent.
+\end{itemize}
+
+THe sender's data structure is;
+\begin{lstlisting}
+struct sender {
+    state_t state;
+    void * buffer;
+    size_t buflen;
+    header_t hdr;
+    size_t sent;
+};
 \end{lstlisting}
 
-\subsubsection{Sender - Interface}
 
+\subsubsection{Send to peer - procedure}
+The interface of this function is:
+\begin{lstlisting}
+int send_to_peer(const struct nodeID *self, struct nodeID *to,
+                 const uint8_t *buffer_ptr, int buffer_size)
+\end{lstlisting}
+where the meaning of the paramenters is:
+\begin{itemize}
+  \item \textbf{self}: is the reference to the caller's \textit{nodeID} data-structure.
+  \item \textbf{to}: is the recepient's \textit{nodeID} data-structure.
+  \item \textbf{buffer\_ptr}: is the pointer to the message's buffer.
+  \item \textbf{buffer\_size}: represents the size of the buffer.
+\end{itemize}
+At fist, the a searching is executed through the active-neighbours list. If this search fails, that means that
+the two nodes were not communicating, a new connection is estabilished. Than a scanning procedure is executed
+through the \textit{aqueue}.
+
+\subsubsection{Sender - Interface}
+The functions contained in the interface are:
 \begin{lstlisting}
 sender_t sender_new ();
 
@@ -28,19 +78,65 @@ int sender_run (sender_t s, int fd);
 void sender_del (sender_t s);
 \end{lstlisting}
 
+The meaning of each of each of them is:
+\begin{itemize}
+  \item \textbf{sender\_new}: initializes a new sender.
+  \item \textbf{sender\_state}: this is needed for monitoring the state of the sender.
+  \item \textbf{sender\_reset}: once the trasmittion is completed, the sender is eventually reset for
+                                further communications.
+  \item \textbf{sender\_subscribe}: the sender need to be subscribed
+  \item \textbf{sender\_run}: the sender needs to be run once it is initialized or after it has been reset.
+  \item \textbf{sender\_del}: when a sender is not needed anymore, the used resources have to be released.
+\end{itemize}
+
 \subsection{Receive from Peer}
+The receiver is slightly different, but the conceptual split between the \textit{state machine} and the
+\textit{procedure} has been keept.
+
+\subsubsection{Receiver state machine}
+Respect to the sender, the state machine of the receiver needs to account the message is ready or the
+buffer is ready (and so empty) for a new message.
 \begin{lstlisting}
 typedef enum {
     RECVER_MSG_READY,
     RECVER_EMPTY,
     RECVER_BUSY
 } recver_state_t;
+
+typedef enum {
+    RCV_HEADER,
+    RCV_MESSAGE,
+    RCV_COMPLETE,
+} state_t;
 \end{lstlisting}
+
+\subsubsection{Receiver state machine}
+The interface of this function is:
+\begin{lstlisting}
+int recv_from_peer(const struct nodeID *self, struct nodeID **remote,
+                   uint8_t *buffer_ptr, int buffer_size)
+\end{lstlisting}
+where the meaning of the paramenters is:
+\begin{itemize}
+  \item \textbf{self}: is the reference to the caller's \textit{nodeID} data-structure.
+  \item \textbf{to}: is the sender's \textit{nodeID} data-structure.
+  \item \textbf{buffer\_ptr}: is the pointer to the message's buffer.
+  \item \textbf{buffer\_size}: represents the size of the buffer.
+\end{itemize}
+At first, there is an \textit{while} cycle in this function that iterates meanwhile the local
+\textit{qaueue} is empty:
+\begin{lstlisting}
+while (aqueue_empty(loc->aqueue)) {
+  if (aqueue_scan_dict(loc->aqueue, loc->neighbors, loc->srvfd, NULL, NULL) == -1)
+    return -1;
+}
+\end{lstlisting}
+Than, the sender is associated to the next client in the \textit{aqueue}. After that, the mesage is extracted
+from the sender's data. At this point, the receiver obtains the needed message and prepares the
+related buffers. At at last, the function returns the size of the obtained message.
 
 \subsubsection{Receiver - Interface}
 \begin{lstlisting}
-typedef struct recver * recver_t;
-
 recver_t recver_new ();
 
 recver_state_t recver_state (recver_t r);
@@ -54,8 +150,19 @@ int recver_run (recver_t r, int fd);
 void recver_del (recver_t r);
 \end{lstlisting}
 
-\subsection{Wait for Data}
+The meaning of each of this functions is similar to what explained in the sender's section.
 
-\subsubsection{Wait for data - interface}
+\subsection{Wait for Data}
+This is the point in the module where the \textit{timeout} structure, explained previously, is beeing used.
+The core of this function is the waiting untill the timeout expires or there is a message:
 \begin{lstlisting}
+   while (!tout_expired(T) && aqueue_empty(loc->aqueue)) {
+        res = aqueue_scan_dict(loc->aqueue, loc->neighbors, loc->srvfd,
+                               NULL, tout_remaining(T, &tmp));
+                               if (res == -1) {
+            tout_del(T);
+            return -1;
+        }
+        ret |= res;
+    }
 \end{lstlisting}

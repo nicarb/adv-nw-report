@@ -117,7 +117,7 @@ void dict_del (dict_t d);
 \end{lstlisting}
 
 \subsection{A-queue}
-
+Another important part for this module is the \textbf{A-queue}. It enqueues the active connections.
 \begin{lstlisting}
 struct aqueue {
     dlist_t * queue;
@@ -127,7 +127,14 @@ struct aqueue {
     int n_active;
 };
 \end{lstlisting}
-
+As can be noticed in this data structure, it is composed of:
+\begin{itemize}
+\item \textit{queue}: the queue list of the nodes.
+\item \textit{fd read set}: the set of reading nodes
+\item \textit{fd write set}: the set of writting nodes
+\item \textit{max fd}: 
+\item \textit{active fds}: the number of active nodes.
+\end{itemize}
 \subsubsection{A-queue iterface}
 Here has been reported the interface of the functions related to the queue management:
 \begin{lstlisting}
@@ -149,7 +156,9 @@ client_t aqueue_next (aqueue_t q);
 \end{lstlisting}
 
 \subsection{Timeout}
-
+This is another important concept. It has been used in order to overcome the problem of tcp conections
+that are beeing keept active but do not communicate anymore. This leads to a waste of resources, so
+a timeout tool is needed as solution.
 \begin{lstlisting}
 struct tout {
     struct timeval last_update;
