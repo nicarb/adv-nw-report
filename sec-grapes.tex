@@ -1,6 +1,42 @@
 \section{GRAPES}
 \label{ch:grapes}
-At this point lets have a look to the content of \textbf{GRAPES} library and the module we developed.
+At this point, a quick overview to the content of \textbf{GRAPES} library is needed. In particular the focus
+will be centered to the portion reguarding transmittion. This library is used mainly in real-time programs, thus
+high requirements for the real-time paradigms are required.
 
-\subsection{asd}
-\label{asd}
+\subsection{Net-Helpers}
+The \textbf{GRAPES} library works with different net-helpers. This permits the usage of the library for different
+tools. \textbf{PeerStreamer}, a \textit{P2P Media Streaming framework}, implements its own trasmittion system
+based on these net-helpers. There have been define a unique interface that is used by each (opaque)
+implementation. More details reguarding in particular the \textbf{TCP} implementation will be found in
+the next section.
+
+\subsubsection{Interface}
+The \textit{net-helper}'s interface is almost basic. There is an opaque data type, \textit{struct nodeID}:
+its implementation depend on the specific implementation. There are declared also some useful functions
+for such structure such \textit{creating}, \textit{duplicating}, \textit{comparing}, \textit{serializing} and
+\textit{undumping} data to and from a byte array.
+As reguard netheper itself, there are needed some further functions for its \textit{initialization},
+\textit{sending to peer}, \textit{receiving from peer}, \textit{waiting for data}.
+
+\paragraph{Messaging} 
+
+
+\paragraph{Receive from peer} there is a procedure for receiving data from a remote peer, intuitively called
+\textit{recv\_from\_peer}. It handles transparently the receiving routines in a \textit{blocking} policy.
+It receives as parameters:
+\begin{itemize}
+\item a pointer representing the caller who sent the data
+\item a pointer to the remote address that has to be sat to a new nodeID sturcture representing the sender peer.
+\item a pointer to the the buffer containing the received data, and
+\item the size of such buffer.
+\end{itemize}
+
+\paragraph{Send to peer}
+it is similar to \textit{receivie from peer} considered from the sender side.
+
+\paragraph{Wait for data} is used for examining the status of file descriptors of open input/output channels,
+similar to what is done by \textit{select} system call in \textit{Unix}. Respect to the latest one,
+\textit{wait for data} wakes up the caller once a whole message has been received, or in case of failure such
+timeout expired.
+

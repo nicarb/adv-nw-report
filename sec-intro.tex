@@ -1,94 +1,38 @@
 \section{Introduction}
 \label{ch:intro}
-Before getting lost in many technicalities, there have been reported a small
+Before getting lost in many technicalities, here has been reported a small
 introduction to the GRAPES library. It is a generic environment for P2P
-streaming. It is designed to be usable in different environments and
-situations. Peer-to-peer (\textbf{P2P}) tecnologies are becoming increasingly
-popular as a way to overcome the scalability problem limitations intrinsic in
-traditional applications based on client/server paradigm. In particular there
-is a great interest in P2P streaming applications because they have high
-demands in term of bandwidth requirements and IP-level multicasting is not
-supported on the internet.
-More details could be found in \cite{disi10-038}.
-
-The \textbf{GRAPES} library provides a net-helper for managing the
-communication. At the beggining, it was using the \textit{UDP} protocol on POSIX
-systems. As it is known, \textit{UDP} is commonly used in internet for streaming audio and video,
-whereas it is avoided in contexts where the content of the transmitted data is relevant.
-The reason for implementing a \textit{TCP}-communication module that works in a context where
-commonly \textit{UDP} is used, is given by the need of 'guaranteeing delivery'.
-Some features for this are intrinsecally given by \textit{TCP}:
+streaming and it is designed to be usable in different environments and
+situations. More details could be found in \cite{disi10-038}.\\
+The \textbf{GRAPES} \textit{(Generic Resource-Aware P2P Environment for Streaming)} library provides a tool,
+called net-helper, for managing the communication. 
+In particular, the main focus will be on the communication procedures:
 \begin{itemize}
-\item \textbf{flow control}: it determines when data needs to be re-sent and stops flow of data until
-  previous packes are successfully transeferred.
-\item \textbf{re-transimittion}: if the data is lost or collision have occur during transmition.
-\end{itemize}
-Some other functionalities have been created in order to takle disadvantages that \textit{TCP} has
-respect to \textit{UDP}:
-\begin{itemize}
-\item \textbf{dictionary}: a manager for the set of connections in order to keep them `alive'.
-                          Commonly \textit{TCP} is used in 'single-shot' mode: the transition is
-                          used for delivering a packet and the connection is closed once it has
-                          been completely transferred. This is an waste of resources in an
-                          environment where is exchanged a high rate of packets.
-\item \textbf{states machines}: for both sender and receiver peers have been builded a state machine
-                                that permites to them to be in consistent state.
-\item \textbf{timeout}: connections are closed when a predefined timeout expires.
-\end{itemize}
-
-In this report will be explained the internals of the net-helper-tcp module.
-In particular, the focus will be on three main functions that are involved:
-\begin{itemize}
-  \item \textit{send\_to\_peer}: executes the sending of a messages. More details about
-    this could be found in next section.
-  \item \textit{recv\_from\_peer}: executes the receiving of a message. More details about
-    this could be found in next section.
-  \item \textit{wait4data}:  continuosly scans connected peers for receiving data.
+  \item \textbf{send\_to\_peer}: executes the sending of a messages. More details about
+    this could be found in the further sections.
+  \item \textbf{recv\_from\_peer}: executes the receiving of a message. More details about
+    this could be found in the further sections.
+  \item \textbf{wait4data}:  continuosly scans connected peers for receiving data.
     More details about this could be found in next section.
 \end{itemize}
-
-
-\subsection{Connection estabilishment}
-
-\subsubsection{net-helper init}
-At first, a \textit{node} is created containg the own \textit{ip address} and \textit{port}. 
-
-\begin{lstlisting}
-typedef struct nodeID {
-    unsigned refcount;
-    sockaddr_t addr;
-    local_t *loc;
-} nodeid_t;
-\end{lstlisting}
-This data set contains:
+There have been tackled different problems that increase complexity on managing the communication in
+\textbf{TCP} protocol respect to what was done in \textbf{UDP}.\\
+On developing such procedures in \textbf{TCP}, the first problem encountered reguards connectivity.
 \begin{itemize}
-\item \textbf{reference counter} a label that accounts the duplication of the node.
-\item \textbf{socket address} a data structure containing the socked address
-  (for more details: \ref{apx-nh-init}). 
-\item \textbf{local\_t} local data struct that will be explained below.
+ \item On the one hand, the \textbf{UDP} protocol is not connection oriented. It uses the same file descriptor
+       for communicating with all (connected) hosts.
+ \item on the other hadnd, the \textbf{TCP} protocol needs to use multiple file descriptors, one for each
+   connected peer and one for the server.
 \end{itemize}
-Than there is allocated a \textit{local\_t} data structure, as mentioned before. The \textit{nodeid\_t}
-contains a local data structure that is:
-\begin{lstlisting}
-typedef struct {
-    dict_t neighbors;
-    int srvfd;
-    aqueue_t aqueue;
-} local_t;
-\end{lstlisting}
-This data set consists on:
-\begin{itemize}
-\item \textbf{a dictionary} (a set of nodes) of its neighbours. More details about this will be explained in next
-                            section.
-\item \textbf{a file descriptor} that correspond to its own file descriptor.
-\item \textbf{a queue} that is a data structure corresponding to a queue of active peers. More details about this
-                       will be explained in section %%%
-\end{itemize}
-After initializing the needed data structures (e.g.local\_t, dict\_t, timeout, ...),
-the initializer returns the created data-structure \textit{nodeID}.
+Considering the later point, there have been built a tool for managing such connections, called
+\textit{Dictionary}.\\
+Another not so trivial problem to handle is the simultaneous communication with different peers through different
+file descriptors. This problem do not exist in \textbf{UDP} considering that there is a single file descriptor
+for communicating with other hosts, whereas in \textbf{TCP} has been straighten out by using a specific
+queue structure, called \textit{A-queue}.
 
 \subsection{Dictionary}
-This could be considered the key point for management of the connections. It is managed through a hash-table
+This could be considered the key point for management of the connections. It is handled through a hash-table
 which relies in an external library, \textbf{libdacav}.\\
 The related data structure is declare as:
 \begin{lstlisting}
@@ -97,27 +41,10 @@ struct dict {
     size_t nelems;
 };
 \end{lstlisting}
-
-\subsubsection{Dictionary interface}
-Here are reported the headers of the functions needed for the dictionary's management.
-\begin{lstlisting}
-/* Return 1 to continue, 0 to stop scanning */
-typedef int (* dict_foreach_t) (void *ctx, const sockaddr_t * addr,
-client_t cl);
-
-/* Destructor must support NULL as input value */
-dict_t dict_new (struct tag *);
-
-/* Returns the inner pointer to client instance */
-client_t dict_search (dict_t d, const sockaddr_t *);
-
-void dict_foreach (dict_t d, dict_foreach_t cb, void * ctx);
-
-void dict_del (dict_t d);
-\end{lstlisting}
+(And some more yada to be added on the dictionary part...)
 
 \subsection{A-queue}
-Another important part for this module is the \textbf{A-queue}. It enqueues the active connections.
+
 \begin{lstlisting}
 struct aqueue {
     dlist_t * queue;
@@ -127,61 +54,4 @@ struct aqueue {
     int n_active;
 };
 \end{lstlisting}
-As can be noticed in this data structure, it is composed of:
-\begin{itemize}
-\item \textit{queue}: the queue list of the nodes.
-\item \textit{fd read set}: the set of reading nodes
-\item \textit{fd write set}: the set of writting nodes
-\item \textit{max fd}: 
-\item \textit{active fds}: the number of active nodes.
-\end{itemize}
-\subsubsection{A-queue iterface}
-Here has been reported the interface of the functions related to the queue management:
-\begin{lstlisting}
-aqueue_t aqueue_new ();
-
-/**                                                                                                        
- * @retval 0 on normal execution;                                                                          
- * @retval 1 if user_fds are involved in selects;                                                          
- * @retval -1 on error.                                                                                    
- */
-int aqueue_scan_dict (aqueue_t q, dict_t dict, int srv_fd, int *user_fds,
-                      struct timeval *maxwait);
-
-int aqueue_empty (aqueue_t q);
-
-void aqueue_del (aqueue_t q);
-
-client_t aqueue_next (aqueue_t q);
-\end{lstlisting}
-
-\subsection{Timeout}
-This is another important concept. It has been used in order to overcome the problem of tcp conections
-that are beeing keept active but do not communicate anymore. This leads to a waste of resources, so
-a timeout tool is needed as solution.
-\begin{lstlisting}
-struct tout {
-    struct timeval last_update;
-    struct timeval period;
-};
-\end{lstlisting}
-
-\subsubsection{Timeout interface}
-Here is reported the interface of the timeout management:
-\begin{lstlisting}
-tout_t tout_new (const struct timeval *timeout);
-
-tout_t tout_copy (const tout_t t);
-
-void tout_reset (tout_t t);
-
-int tout_expired (tout_t t);
-
-void tout_del (tout_t t);
-
-struct timeval * tout_remaining (tout_t t, struct timeval *diff);
-
-unsigned tout_timeval_to_ms (const struct timeval *tval);
-
-unsigned tout_now_ms ();
-\end{lstlisting}
+(And some more yada to be added on the aqueue part...)
