@@ -1,167 +1,89 @@
-\section{Net Helper - TCP}
-A first layout of the \textit{net-helper-TCP}'s module, that consist on initialization, main data structures
-and management functions, were explained in the previous section. whereas here are explained its specific implementation that consist on logical management of the data transfer.
+\section{Net Helper}
+In this section are explained specific problematiques and solutions for implementing \textit{net-helper} in
+\textbf{TCP}.
 
-\subsection{Send to Peer}
-The sending conceptually has been split in two parts:
+\subsection{Nethelper: UDP vs TCP}
+Considering the programming logics on implementing the nethelper as defined in the previous section, the two
+main differences are:
 \begin{itemize}
-  \item \textbf{a state machine} 
-  \item \textbf{a procedure} that manages the act of sending
+  \item \textit{Multiple connections}: in \textbf{TCP} each node correspond to a different socket descriptor,
+    whereas in \textbf{UDP} there is a single socket which is used for retriving data.
+  \item \textit{message size}: in \textbf{UDP} the data are sent without any attention on size of
+    sent data, whereas in \textbf{TCP} such controls are intrinsically embedded. 
 \end{itemize}
+More detalis are reported in following subsections.
 
+\subsection{Multiple Connections issue}
+This is a problem deriving from the logics on which is based \textbf{TCP}. It uses a mapping between a node
+and the corresponding socket descriptor. This does not have any consequences on sending process, whereas there
+is some at the receiving one. Some difficulties on overcomming this problem arised due to the fact that the
+interface used by \textit{net-helper} was defined at the very beggining phase of design \textbf{GRAPES}
+library. The protocol planned to be used at that moment was \textbf{UDP}, thus some more general issues
+were not taken in consideration. In particular, this is related to the fact that the \textit{net-helper}'s
+interface only provides a data-structure \textit{nodeID} which represents the node itself. For this reason,
+within such structure are embedded some extra tools such managing the known neighbours.
 
-\subsubsection{Sender state machine}
-The state machine itself has been divided in two parts: at \textit{sender} level and at \textit{message} level.
+\subsubsection{solution}
+As mentioned before, all neighbours are collected and stored into a \textit{nodeID} data structure that
+is the node itself.
 \begin{lstlisting}
-typedef enum {
-    SENDER_IDLE,
-    SENDER_BUSY
-} sender_state_t;
+typedef struct {
+    dict_t neighbors;
+    int srvfd;
+    aqueue_t aqueue;
+} local_t;
 
-typedef enum {
-    SND_HEADER,
-    SND_MESSAGE,
-    SND_IDLE,
-} state_t;
-\end{lstlisting}
-This is done because the sending is considered to be acomplished in two steps:
-\begin{itemize}
-  \item at first the sender deliveres a message containing a headder in order to inform the receiver. This is
-        foundamental for the recepient in order to allocate the needed resources and give a feedback for the
-        related send request.
-  \item than the body of the related message is sent.
-\end{itemize}
-
-THe sender's data structure is;
-\begin{lstlisting}
-struct sender {
-    state_t state;
-    void * buffer;
-    size_t buflen;
-    header_t hdr;
-    size_t sent;
-};
+typedef struct nodeID {
+    unsigned refcount;
+    sockaddr_t addr;
+    local_t *loc;
+} nodeid_t;
 \end{lstlisting}
 
-
-\subsubsection{Send to peer - procedure}
-The interface of this function is:
+These structures are used in particular at sending and at receiving phases:
 \begin{lstlisting}
 int send_to_peer(const struct nodeID *self, struct nodeID *to,
                  const uint8_t *buffer_ptr, int buffer_size)
 \end{lstlisting}
-where the meaning of the paramenters is:
-\begin{itemize}
-  \item \textbf{self}: is the reference to the caller's \textit{nodeID} data-structure.
-  \item \textbf{to}: is the recepient's \textit{nodeID} data-structure.
-  \item \textbf{buffer\_ptr}: is the pointer to the message's buffer.
-  \item \textbf{buffer\_size}: represents the size of the buffer.
-\end{itemize}
-At fist, the a searching is executed through the active-neighbours list. If this search fails, that means that
-the two nodes were not communicating, a new connection is estabilished. Than a scanning procedure is executed
-through the \textit{aqueue}.
+\paragraph{Sending phase}: the interface provides two \textit{nodeID} data-structure: \textit{self} and
+\textit{to} that correspond to the sender and receiver, respectively. In both cases, there is a local
+data-structure that provides tools for managing the neighbours such as a dictionary hash-mapp. The later
+one, uses  the sock-addresses of the neighbours as keys for the mapping. This permitts to select the target
+node.
 
-\subsubsection{Sender - Interface}
-The functions contained in the interface are:
-\begin{lstlisting}
-sender_t sender_new ();
-
-sender_state_t sender_state (sender_t s);
-
-void sender_reset (sender_t s);
-
-int sender_subscribe (sender_t s, const msgbuf_t *msg);
-
-int sender_run (sender_t s, int fd);
-
-void sender_del (sender_t s);
-\end{lstlisting}
-
-The meaning of each of each of them is:
-\begin{itemize}
-  \item \textbf{sender\_new}: initializes a new sender.
-  \item \textbf{sender\_state}: this is needed for monitoring the state of the sender.
-  \item \textbf{sender\_reset}: once the trasmittion is completed, the sender is eventually reset for
-                                further communications.
-  \item \textbf{sender\_subscribe}: the sender need to be subscribed
-  \item \textbf{sender\_run}: the sender needs to be run once it is initialized or after it has been reset.
-  \item \textbf{sender\_del}: when a sender is not needed anymore, the used resources have to be released.
-\end{itemize}
-
-\subsection{Receive from Peer}
-The receiver is slightly different, but the conceptual split between the \textit{state machine} and the
-\textit{procedure} has been keept.
-
-\subsubsection{Receiver state machine}
-Respect to the sender, the state machine of the receiver needs to account the message is ready or the
-buffer is ready (and so empty) for a new message.
-\begin{lstlisting}
-typedef enum {
-    RECVER_MSG_READY,
-    RECVER_EMPTY,
-    RECVER_BUSY
-} recver_state_t;
-
-typedef enum {
-    RCV_HEADER,
-    RCV_MESSAGE,
-    RCV_COMPLETE,
-} state_t;
-\end{lstlisting}
-
-\subsubsection{Receiver state machine}
-The interface of this function is:
 \begin{lstlisting}
 int recv_from_peer(const struct nodeID *self, struct nodeID **remote,
                    uint8_t *buffer_ptr, int buffer_size)
 \end{lstlisting}
-where the meaning of the paramenters is:
-\begin{itemize}
-  \item \textbf{self}: is the reference to the caller's \textit{nodeID} data-structure.
-  \item \textbf{to}: is the sender's \textit{nodeID} data-structure.
-  \item \textbf{buffer\_ptr}: is the pointer to the message's buffer.
-  \item \textbf{buffer\_size}: represents the size of the buffer.
-\end{itemize}
-At first, there is an \textit{while} cycle in this function that iterates meanwhile the local
-\textit{qaueue} is empty:
-\begin{lstlisting}
-while (aqueue_empty(loc->aqueue)) {
-  if (aqueue_scan_dict(loc->aqueue, loc->neighbors, loc->srvfd, NULL, NULL) == -1)
-    return -1;
-}
-\end{lstlisting}
-Than, the sender is associated to the next client in the \textit{aqueue}. After that, the mesage is extracted
-from the sender's data. At this point, the receiver obtains the needed message and prepares the
-related buffers. At at last, the function returns the size of the obtained message.
+\paragraph{Receiving}: in this case, the \textit{self-nodeID} data-structure is of much more interest
+considering that it scans the incoming messages, without any particular attention to their sender.
 
-\subsubsection{Receiver - Interface}
-\begin{lstlisting}
-recver_t recver_new ();
 
-recver_state_t recver_state (recver_t r);
+\subsection{Message size issue}
+Another problem reguarding \textbf{TCP} is the fact it has to manage messages' size and completness.
+\textbf{UDP} does not take in account such problem considering that it sends the data in burst without
+worrying about the size. The advantage of such behaviour is that there is a reduced delay considerig that
+the protocol does not execute any control the transmitted data. This is optimal for its usage in real-time
+applications, whereas at receiving side, \textbf{TCP} needs to wait for a complete transittion or hold on
+partial data transmittion.
 
-void recver_reset (recver_t r);
+\subsubsection{solution}
+The operations reguarding the sending and receiving are modeled as state-machine processes.
 
-const msgbuf_t * recver_read (recver_t r);
-
-int recver_run (recver_t r, int fd);
-
-void recver_del (recver_t r);
-\end{lstlisting}
-
-The meaning of each of this functions is similar to what explained in the sender's section.
-
-\subsection{Wait for Data}
-This is the point in the module where the \textit{timeout} structure, explained previously, is beeing used.
-The core of this function is the waiting untill the timeout expires or there is a message:
-\begin{lstlisting}
-   while (!tout_expired(T) && aqueue_empty(loc->aqueue)) {
-        res = aqueue_scan_dict(loc->aqueue, loc->neighbors, loc->srvfd,
-                               NULL, tout_remaining(T, &tmp));
-                               if (res == -1) {
-            tout_del(T);
-            return -1;
-        }
-        ret |= res;
-    }
-\end{lstlisting}
+\begin{figure}[ht!]
+  \begin{center}
+    \subfigure[Sender's]{%
+      \label{fig:first}
+      \includegraphics[width=0.6\textwidth]{figures/sender}
+    }%
+    \subfigure[Receiver's]{%
+      \label{fig:second}
+      \includegraphics[width=0.5\textwidth]{figures/receiver}
+    }%
+  \end{center}
+  \caption{%
+    State Machines
+  }%
+\end{figure}
+\paragraph{Sender}:
+\paragraph{Receiver}:
