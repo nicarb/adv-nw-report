@@ -1,19 +1,7 @@
-\section{Net Helper}
-In this section are explained specific problematiques and solutions for implementing \textit{net-helper} in
-\textbf{TCP}.
+\section{NetHelper: UDP and TCP}
+This section shows some specific issues and solutions for implementing \textit{net-helper} in \textbf{TCP}.
 
-\subsection{Nethelper: UDP vs TCP}
-Considering the programming logics on implementing the nethelper as defined in the previous section, the two
-main differences are:
-\begin{itemize}
-  \item \textit{Multiple connections}: in \textbf{TCP} each node correspond to a different socket descriptor,
-    whereas in \textbf{UDP} there is a single socket which is used for retriving data.
-  \item \textit{message size}: in \textbf{UDP} the data are sent without any attention on size of
-    sent data, whereas in \textbf{TCP} such controls are intrinsically embedded. 
-\end{itemize}
-More detalis are reported in following subsections.
-
-\subsection{Multiple Connections issue}
+\subsection{Managing Multiple Connections}
 This is a problem deriving from the logics on which is based \textbf{TCP}. It uses a mapping between a node
 and the corresponding socket descriptor. This does not have any consequences on sending process, whereas there
 is some at the receiving one. Some difficulties on overcomming this problem arised due to the fact that the

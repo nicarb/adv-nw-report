@@ -1,33 +1,42 @@
 \section{GRAPES}
 \label{ch:grapes}
-At this point, a quick overview to the content of \textbf{GRAPES} library is needed. In particular the focus
-will be centered to the portion reguarding transmittion. This library is used mainly in real-time programs, thus
-high requirements for the real-time paradigms are required.
+At this point, a quick overview to the content of \textbf{GRAPES} library is needed. In particular the focus will be centered to the portion reguarding transmittion. This library is used mainly in real-time programs, thus
+high requirements for the real-time constraints.
+
+
 
 \subsection{Net-Helpers}
-The \textbf{GRAPES} library works with different net-helpers. This permits the usage of the library for different
-tools. \textbf{PeerStreamer}, a \textit{P2P Media Streaming framework}, implements its own trasmittion system
-based on these net-helpers. There have been define a unique interface that is used by each (opaque)
+The \textbf{GRAPES} library works with different net-helpers, that are based
+in a common interface.This permits the usage of the library for different
+tools. In particular, the core of it is based on the communication procedures:
+\begin{itemize}
+  \item \textbf{send\_to\_peer}: executes the sending of a messages.
+  \item \textbf{recv\_from\_peer}: executes the receiving of a message. 
+  \item \textbf{wait4data}:  continuosly scans connected peers for receiving data.
+\end{itemize}
+\textbf{PeerStreamer}, a \textit{P2P Media Streaming framework}, implements its own trasmittion system based on these net-helpers.
+In particular, the library is structured for permitting a customizable configuration of NetHelpers at compile time. 
+There have been define a unique interface that is used by each (opaque)
 implementation. More details reguarding in particular the \textbf{TCP} implementation will be found in
 the next section.
 
 \subsubsection{Interface}
-The \textit{net-helper}'s interface is almost basic. There is an opaque data type, \textit{struct nodeID}:
-its implementation depend on the specific implementation. There are declared also some useful functions
-for such structure such \textit{creating}, \textit{duplicating}, \textit{comparing}, \textit{serializing} and
+The \textit{net-helper}'s interface is very simple. There are:
+\begin{itemize}
+\item \textit{struct nodeID}: an opaque data type which data-structure definition depends on the specific implementation.
+\item some functions for managing \textit{nodeID} data structure: \textit{creating}, \textit{duplicating}, \textit{comparing}, \textit{serializing} and
 \textit{undumping} data to and from a byte array.
-As reguard netheper itself, there are needed some further functions for its \textit{initialization},
+\item some functions reguarding \textit{NetHelper}'s \textit{initialization},
 \textit{sending to peer}, \textit{receiving from peer}, \textit{waiting for data}.
+\end{itemize}
 
 \paragraph{Messaging} 
-
-
 \paragraph{Receive from peer} there is a procedure for receiving data from a remote peer, intuitively called
-\textit{recv\_from\_peer}. It handles transparently the receiving routines in a \textit{blocking} policy.
-It receives as parameters:
+\textit{recv\_from\_peer}. It handles transparently the receiving routines with a \textit{blocking} policy.
+It requires the following parameters:
 \begin{itemize}
 \item a pointer representing the caller who sent the data
-\item a pointer to the remote address that has to be sat to a new nodeID sturcture representing the sender peer.
+\item a pointer to the remote address that has to be set to a new nodeID sturcture representing the sender peer.
 \item a pointer to the the buffer containing the received data, and
 \item the size of such buffer.
 \end{itemize}

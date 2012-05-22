@@ -4,28 +4,16 @@ Before getting lost in many technicalities, here has been reported a small
 introduction to the GRAPES library. It is a generic environment for P2P
 streaming and it is designed to be usable in different environments and
 situations. More details could be found in \cite{disi10-038}.\\
-The \textbf{GRAPES} \textit{(Generic Resource-Aware P2P Environment for Streaming)} library provides a tool,
+The \textbf{GRAPES} library provides a module,
 called net-helper, for managing the communication. 
-In particular, the main focus will be on the communication procedures:
+There have been tackled different problems that increase the complexity on managing the communication in
+\textbf{TCP} protocol with respect to what was done in \textbf{UDP}.\\
+In \textbf{TCP}, the first problem encountered reguards connectivity.
 \begin{itemize}
-  \item \textbf{send\_to\_peer}: executes the sending of a messages. More details about
-    this could be found in the further sections.
-  \item \textbf{recv\_from\_peer}: executes the receiving of a message. More details about
-    this could be found in the further sections.
-  \item \textbf{wait4data}:  continuosly scans connected peers for receiving data.
-    More details about this could be found in next section.
+ \item On the one hand, the \textbf{UDP} protocol is not connection oriented. It uses the same file descriptor for communicating with all hosts.
+ \item on the other hadnd, the \textbf{TCP} protocol needs to use multiple file descriptors, one for each connected peer and one for the server.
 \end{itemize}
-There have been tackled different problems that increase complexity on managing the communication in
-\textbf{TCP} protocol respect to what was done in \textbf{UDP}.\\
-On developing such procedures in \textbf{TCP}, the first problem encountered reguards connectivity.
-\begin{itemize}
- \item On the one hand, the \textbf{UDP} protocol is not connection oriented. It uses the same file descriptor
-       for communicating with all (connected) hosts.
- \item on the other hadnd, the \textbf{TCP} protocol needs to use multiple file descriptors, one for each
-   connected peer and one for the server.
-\end{itemize}
-Considering the later point, there have been built a tool for managing such connections, called
-\textit{Dictionary}.\\
+Considering the second point, there have been built a tool for managing such connections, called \textit{Dictionary}.\\
 Another not so trivial problem to handle is the simultaneous communication with different peers through different
 file descriptors. This problem do not exist in \textbf{UDP} considering that there is a single file descriptor
 for communicating with other hosts, whereas in \textbf{TCP} has been straighten out by using a specific
@@ -34,24 +22,3 @@ queue structure, called \textit{A-queue}.
 \subsection{Dictionary}
 This could be considered the key point for management of the connections. It is handled through a hash-table
 which relies in an external library, \textbf{libdacav}.\\
-The related data structure is declare as:
-\begin{lstlisting}
-struct dict {
-    dhash_t *hash;
-    size_t nelems;
-};
-\end{lstlisting}
-(And some more yada to be added on the dictionary part...)
-
-\subsection{A-queue}
-
-\begin{lstlisting}
-struct aqueue {
-    dlist_t * queue;
-    fd_set read;
-    fd_set write;
-    int maxfd;
-    int n_active;
-};
-\end{lstlisting}
-(And some more yada to be added on the aqueue part...)
