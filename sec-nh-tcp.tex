@@ -56,7 +56,10 @@ applications, whereas at receiving side, \textbf{TCP} needs to wait for a comple
 partial data transmittion.
 
 \subsubsection{solution}
-The operations reguarding the sending and receiving are modeled as state-machine processes.
+The operations reguarding the sending and receiving are modeled as state-machine processes. Before starting 
+the communication, the sender deliveres a packet for handshaking. That packet contains a headder, and in
+particular, such header informs the receiver about the size of the message meant to be sent, and thus the
+allocating size needed for the buffer where to place that packet.
 
 \begin{figure}[ht!]
   \begin{center}
@@ -73,5 +76,15 @@ The operations reguarding the sending and receiving are modeled as state-machine
     State Machines
   }%
 \end{figure}
-\paragraph{Sender}:
-\paragraph{Receiver}:
+
+\paragraph{Sender}, \textit{(fig.1-a)}:
+the starting state for the sender is \textit{IDLE}. This means that it is waiting for
+messages to deliver. When a new message arrives, a headder is created and then sent. The sending of the
+header could be partial, so the state could remain in \textit{SND-HEADER}. Once the header is sent successfully,
+the sender proceeds sending the message, thus remains in \textit{SND-MESSAGE} state until the whole message
+is sent, than switches back to \textit{IDLE}.
+
+\paragraph{Receiver},\textit{(fig.1-b)}:
+as starting state, the receiver wiaits for a headder message (\textit{RCV-HEADER}).
+Once the header is received, it waits for the message do be delivered (\textit{RCV-MESSAGE}). After the message
+is completely received, it swiches to \textit{RCV-COMPLETE} and then back to \textit{RCV-HEADER} state.
